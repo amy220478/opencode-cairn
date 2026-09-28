@@ -18,6 +18,12 @@
 
 ![Project Explorer collapsed](./assets/explorer-collapsed.png)
 
+## Presentation
+
+Interactive 8-slide deck for demos: [presentation.html](./presentation.html)
+
+Open it locally (double-click or `start presentation.html`), then use `← → / space`, `T` theme, `P` print-to-PDF. Images load from `./assets/` — keep the folder together.
+
 ## Core Features
 
 Persistent sidebar tree, per-folder `▸/▾` expand/collapse with classic `├──` / `└──` guide lines, color-coded file types (folders sky-blue; `ts` blue, `js` yellow, `json/yaml` green, `md` purple, `html/css` orange, media pink, configs gray), click-to-toggle folders, click-to-open files in the OS default app, full keyboard + command-palette control (works over SSH where mice don't), auto-shows on launch with state persisted across restarts, and zero runtime dependencies.
