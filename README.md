@@ -20,7 +20,7 @@
 
 ## Presentation
 
-Interactive 8-slide deck for demos — live web view: [**▶ Click here to view**](https://amy220478.github.io/opencode-cairn/presentation.html)
+Interactive 8-slide deck for demos — live web view:
 
 [![▶ View Live Presentation](https://img.shields.io/badge/▶_View_Live_Presentation-F59E0B?style=for-the-badge)](https://amy220478.github.io/opencode-cairn/presentation.html)
 
