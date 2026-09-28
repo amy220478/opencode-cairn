@@ -1,12 +1,14 @@
 import { Plugin } from "@opencode/plugin/tui"
 import { For } from "solid-js"
-import { readdirSync, existsSync, statSync } from "node:fs"
-import type { Dirent } from "node:fs"
+import { readdirSync, existsSync, statSync, watch } from "node:fs"
+import type { Dirent, FSWatcher } from "node:fs"
 import { spawn } from "node:child_process"
 import { join, resolve, basename, relative, sep } from "node:path"
 
 const SKIP = new Set(["node_modules", ".git", "dist", "dist-electron", "graphify-out"])
-const DEFAULT_DEPTH = 3
+const DEFAULT_DEPTH = 5
+const WATCH_DEBOUNCE_MS = 150
+const MAX_WATCHED_DIRS = 500
 
 const C = {
   dir: "#38bdf8",
@@ -68,6 +70,9 @@ type Params = {
   paneCollapsed: boolean
   expanded: string[]
   selected: string
+  watch: boolean
+  showAll: boolean
+  version: number
 }
 
 type Node = {
@@ -84,10 +89,10 @@ const toRel = (root: string, abs: string): string => {
   return r === "" ? "" : r
 }
 
-function childEntries(absDir: string): Dirent[] {
+function childEntries(absDir: string, showAll = false): Dirent[] {
   try {
     return readdirSync(absDir, { withFileTypes: true })
-      .filter((e) => !SKIP.has(e.name))
+      .filter((e) => showAll || !SKIP.has(e.name))
       .sort(
         (a, b) =>
           Number(b.isDirectory()) - Number(a.isDirectory()) || a.name.localeCompare(b.name)
@@ -97,11 +102,11 @@ function childEntries(absDir: string): Dirent[] {
   }
 }
 
-function visibleNodes(root: string, expanded: Set<string>, maxDepth: number): Node[] {
+function visibleNodes(root: string, expanded: Set<string>, maxDepth: number, showAll = false): Node[] {
   const out: Node[] = []
   const walk = (absDir: string, level: number, ancestorsLast: boolean[]): void => {
     if (level > maxDepth) return
-    const entries = childEntries(absDir)
+    const entries = childEntries(absDir, showAll)
     entries.forEach((e, i) => {
       const abs = join(absDir, e.name)
       const rel = toRel(root, abs)
@@ -116,8 +121,8 @@ function visibleNodes(root: string, expanded: Set<string>, maxDepth: number): No
   return out
 }
 
-function topLevelExpanded(root: string): string[] {
-  return childEntries(root)
+function topLevelExpanded(root: string, showAll = false): string[] {
+  return childEntries(root, showAll)
     .filter((e) => e.isDirectory())
     .map((e) => toRel(root, join(root, e.name)))
 }
@@ -152,9 +157,14 @@ export default Plugin.define({
         paneCollapsed: false,
         expanded: [],
         selected: "",
+        watch: true,
+        showAll: false,
+        version: 0,
       },
     })
     const st = () => params as unknown as Partial<Params>
+    const showAllOn = (): boolean => st().showAll ?? false
+    const watchOn = (): boolean => st().watch ?? true
 
     const currentLoc = (): string => {
       const direct = context.location as unknown as { directory?: string } | undefined
@@ -173,6 +183,93 @@ export default Plugin.define({
     }
     // Effective root: persisted root wins; empty means "current project".
     const effRoot = (): string => st().root || currentLoc()
+
+    // --- Live refresh: fs.watch -> debounced version bump -> re-render ---
+    let watchers: FSWatcher[] = []
+    let debounceTimer: ReturnType<typeof setTimeout> | undefined
+    let watchedKey = ""
+    const closeWatchers = (): void => {
+      for (const w of watchers) {
+        try {
+          w.close()
+        } catch {
+          /* ignore */
+        }
+      }
+      watchers = []
+    }
+    const bumpVersion = (): void => {
+      updateParams((draft) => {
+        const d = draft as unknown as Params
+        d.version = (d.version ?? 0) + 1
+      })
+    }
+    const scheduleRefresh = (): void => {
+      if (debounceTimer) clearTimeout(debounceTimer)
+      debounceTimer = setTimeout(() => {
+        bumpVersion()
+        // Re-walk so newly created folders get watched (Linux manual mode).
+        refreshWatcher()
+      }, WATCH_DEBOUNCE_MS)
+    }
+    const collectDirs = (root: string, showAll: boolean, maxDepth: number): string[] => {
+      const dirs: string[] = [root]
+      const walk = (absDir: string, level: number): void => {
+        if (level > maxDepth || dirs.length > MAX_WATCHED_DIRS) return
+        for (const e of childEntries(absDir, showAll)) {
+          if (!e.isDirectory()) continue
+          const abs = join(absDir, e.name)
+          dirs.push(abs)
+          if (dirs.length > MAX_WATCHED_DIRS) return
+          walk(abs, level + 1)
+        }
+      }
+      walk(root, 0)
+      return dirs
+    }
+    const refreshWatcher = (): void => {
+      const root = effRoot()
+      const showAll = showAllOn()
+      const enabled = watchOn()
+      const key = `${enabled ? "1" : "0"}|${root}|${showAll}`
+      if (!enabled) {
+        if (watchers.length > 0) closeWatchers()
+        watchedKey = key
+        return
+      }
+      if (key === watchedKey && watchers.length > 0) return
+      closeWatchers()
+      watchedKey = key
+      try {
+        if (!existsSync(root) || !statSync(root).isDirectory()) return
+      } catch {
+        return
+      }
+      const onEvent = (): void => scheduleRefresh()
+      try {
+        if (process.platform === "win32" || process.platform === "darwin") {
+          const w = watch(root, { recursive: true, persistent: false }, onEvent)
+          w.on("error", () => {})
+          watchers.push(w)
+        } else {
+          // Linux: no recursive watch — watch each dir up to depth cap.
+          const depth = st().depth ?? DEFAULT_DEPTH
+          for (const dir of collectDirs(root, showAll, Math.min(10, depth))) {
+            try {
+              const w = watch(dir, { persistent: false }, onEvent)
+              w.on("error", () => {})
+              watchers.push(w)
+            } catch {
+              /* skip unwatched dirs (permissions/EMFILE) */
+            }
+            if (watchers.length >= MAX_WATCHED_DIRS) break
+          }
+        }
+      } catch {
+        /* watcher unavailable — tree still refreshes on next interaction */
+      }
+    }
+    refreshWatcher()
 
     const getExpanded = (): Set<string> => new Set(st().expanded ?? [])
     const setExpanded = (next: Set<string>): void => {
@@ -194,7 +291,7 @@ export default Plugin.define({
       const cur = st()
       if (!cur.visible || cur.paneCollapsed) return
       const root = effRoot()
-      const nodes = visibleNodes(root, getExpanded(), cur.depth ?? DEFAULT_DEPTH)
+      const nodes = visibleNodes(root, getExpanded(), cur.depth ?? DEFAULT_DEPTH, showAllOn())
       if (nodes.length === 0) return
       const idx = nodes.findIndex((n) => n.rel === cur.selected)
       const next =
@@ -208,7 +305,7 @@ export default Plugin.define({
       const cur = st()
       if (!cur.visible || cur.paneCollapsed) return
       const root = effRoot()
-      const nodes = visibleNodes(root, getExpanded(), cur.depth ?? DEFAULT_DEPTH)
+      const nodes = visibleNodes(root, getExpanded(), cur.depth ?? DEFAULT_DEPTH, showAllOn())
       const target =
         nodes.find((n) => n.rel === cur.selected && n.isDir) ?? nodes.find((n) => n.isDir)
       if (!target) return
@@ -228,10 +325,11 @@ export default Plugin.define({
     const expandAll = (): void => {
       const cur = st()
       const root = effRoot()
+      const showAll = showAllOn()
       const all: string[] = []
       const walk = (absDir: string, level: number): void => {
         if (level > (cur.depth ?? DEFAULT_DEPTH)) return
-        for (const e of childEntries(absDir)) {
+        for (const e of childEntries(absDir, showAll)) {
           if (!e.isDirectory()) continue
           const rel = toRel(root, join(absDir, e.name))
           all.push(rel)
@@ -254,7 +352,7 @@ export default Plugin.define({
       if (!cur.visible) return
       const root = effRoot()
       const expanded = getExpanded()
-      const nodes = visibleNodes(root, expanded, cur.depth ?? DEFAULT_DEPTH).filter((n) => n.isDir)
+      const nodes = visibleNodes(root, expanded, cur.depth ?? DEFAULT_DEPTH, showAllOn()).filter((n) => n.isDir)
       if (nodes.length === 0) return
       const choice = await context.ui.dialog.select({
         title: "Toggle folder",
@@ -288,7 +386,7 @@ export default Plugin.define({
       const cur = st()
       if (!cur.visible || cur.paneCollapsed) return
       const root = effRoot()
-      const nodes = visibleNodes(root, getExpanded(), cur.depth ?? DEFAULT_DEPTH)
+      const nodes = visibleNodes(root, getExpanded(), cur.depth ?? DEFAULT_DEPTH, showAllOn())
       const target = nodes.find((n) => n.rel === cur.selected) ?? nodes[0]
       if (!target || target.isDir) return
       setExpandedAndSelected(getExpanded(), target.rel)
@@ -300,6 +398,8 @@ export default Plugin.define({
       render: () => {
         const cur = st()
         if (!cur.visible) return null
+        const _rev = cur.version ?? 0
+        void _rev
         // Pure render: never write state here (writes during render are
         // dropped/loop by the host). Derive defaults locally.
         // Mouse: core Renderable supports onMouseDown; the Solid reconciler
@@ -324,8 +424,8 @@ export default Plugin.define({
             </box>
           )
         }
-        const expanded = new Set(cur.expanded ?? topLevelExpanded(root))
-        const nodes = visibleNodes(root, expanded, cur.depth ?? DEFAULT_DEPTH)
+        const expanded = new Set(cur.expanded ?? topLevelExpanded(root, showAllOn()))
+        const nodes = visibleNodes(root, expanded, cur.depth ?? DEFAULT_DEPTH, showAllOn())
         return (
           <box flexDirection="column">
             <text fg={theme.text.base}>
@@ -419,6 +519,29 @@ export default Plugin.define({
                   else expandAll()
                   return
                 }
+                if (sub === "watch") {
+                  const arg = tokens[1]?.toLowerCase()
+                  updateParams((draft) => {
+                    const d = draft as unknown as Params
+                    d.watch = arg === "off" ? false : arg === "on" ? true : !(d.watch ?? true)
+                  })
+                  refreshWatcher()
+                  return
+                }
+                if (sub === "showall" || sub === "show-all" || sub === "all-files") {
+                  updateParams((draft) => {
+                    ;(draft as unknown as Params).showAll = true
+                  })
+                  refreshWatcher()
+                  return
+                }
+                if (sub === "no-showall" || sub === "hide-hidden" || sub === "filtered") {
+                  updateParams((draft) => {
+                    ;(draft as unknown as Params).showAll = false
+                  })
+                  refreshWatcher()
+                  return
+                }
                 if (sub === "pick") {
                   await pickAndToggle()
                   return
@@ -438,7 +561,7 @@ export default Plugin.define({
                 if (sub === "help") {
                   context.ui.toast.show({
                     message:
-                      "/cairn [path] [depth] • /cairn expand|collapse • /cairn toggle <path> • /cairn all|all collapse • /cairn pick|next|prev|reset",
+                      "/cairn [path] [depth] • /cairn expand|collapse • /cairn toggle <path> • /cairn all|all collapse • /cairn watch on|off • /cairn showall|no-showall • /cairn pick|next|prev|reset",
                   })
                   return
                 }
@@ -449,9 +572,10 @@ export default Plugin.define({
                     d.visible = true
                     d.root = root
                     d.paneCollapsed = false
-                    d.expanded = topLevelExpanded(root)
+                    d.expanded = topLevelExpanded(root, d.showAll ?? false)
                     d.selected = ""
                   })
+                  refreshWatcher()
                   return
                 }
                 if (sub === "next") {
@@ -490,9 +614,10 @@ export default Plugin.define({
                   d.root = root
                   d.depth = depth
                   d.paneCollapsed = false
-                  if (d.expanded === undefined || rootChanged) d.expanded = topLevelExpanded(root)
+                  if (d.expanded === undefined || rootChanged) d.expanded = topLevelExpanded(root, d.showAll ?? false)
                   if (d.selected === undefined) d.selected = ""
                 })
+                refreshWatcher()
               },
             },
             {
@@ -550,6 +675,32 @@ export default Plugin.define({
               group: "Cairn",
               palette: true,
               run: () => collapseAll(),
+            },
+            {
+              id: "cairn.watch-toggle",
+              title: "Cairn: toggle live refresh (fs.watch)",
+              group: "Cairn",
+              palette: true,
+              run: () => {
+                const next = !watchOn()
+                updateParams((draft) => {
+                  ;(draft as unknown as Params).watch = next
+                })
+                refreshWatcher()
+              },
+            },
+            {
+              id: "cairn.showall-toggle",
+              title: "Cairn: toggle show all files",
+              group: "Cairn",
+              palette: true,
+              run: () => {
+                const next = !showAllOn()
+                updateParams((draft) => {
+                  ;(draft as unknown as Params).showAll = next
+                })
+                refreshWatcher()
+              },
             },
           ],
         }))

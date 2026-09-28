@@ -96,6 +96,8 @@ Mouse delivery to plugin slots depends on the host/terminal; the palette path al
 | Pick a folder | `/cairn pick` | Cairn: pick folder to expand/collapse |
 | Move selection | `/cairn next`, `/cairn prev` | Cairn: move selection up/down |
 | Expand / collapse all | `/cairn all`, `/cairn all collapse` | Cairn: expand/collapse all folders |
+| Live refresh | `/cairn watch`, `/cairn watch on\|off` | Cairn: toggle live refresh (fs.watch) |
+| Show all files | `/cairn showall`, `/cairn no-showall` | Cairn: toggle show all files |
 | Open file in editor | `/cairn edit [path]` | Cairn: open selected file in editor |
 | Fresh start | `/cairn reset` | — |
 | Help | `/cairn help` | — |
@@ -110,12 +112,14 @@ No config file needed. State lives in durable `cairn.params` storage (survives r
 |---|---|---|
 | `visible` | `true` | Panel shows without any command |
 | `root` | `""` (= current project) | Pin with `/cairn <path>`; empty always follows you |
-| `depth` | `3` | Max levels rendered (1–10 via `/cairn <n>`) |
+| `depth` | `5` | Max levels rendered (1–10 via `/cairn <n>`) |
+| `watch` | `true` | Live refresh via `fs.watch` (recursive on Win/mac, per-dir on Linux); toggle with `/cairn watch` |
+| `showAll` | `false` | Show everything incl. `node_modules/.git/dist`; toggle with `/cairn showall` |
 | `paneCollapsed` | `false` | Whole-pane collapse |
 | `expanded` | top-level dirs | Per-folder open set |
 | `selected` | `""` | Cursor position |
 
-Skipped everywhere: `node_modules`, `.git`, `dist`, `dist-electron`, `graphify-out`. Sidebar renders ~34 characters wide; deep paths truncate with `…`.
+Skipped by default (unless `/cairn showall`): `node_modules`, `.git`, `dist`, `dist-electron`, `graphify-out`. Sidebar renders ~34 characters wide; deep paths truncate with `…`. New files/folders appear automatically while watching (debounced ~150ms); otherwise they appear on the next interaction.
 
 "Open in editor" uses the OS file association (`start` / `open` / `xdg-open`), not `$EDITOR` — set the Windows association once and clicks follow it.
 
