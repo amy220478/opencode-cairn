@@ -951,7 +951,7 @@
 <div class="slide-header" data-animate="1">
 <div class="deck-brand">
 <span class="deck-brand-pill"></span>
-<span>OPENCODE-CAIRN • V0.1.1</span>
+<span>OPENCODE-CAIRN • V0.2.0</span>
 </div>
 <div class="header-actions">
 <button class="pdf-export-btn" onclick="exportDeckToPDF()" title="Download PDF Presentation (P)">
@@ -969,7 +969,7 @@
 <div class="slide-body">
 <div class="tagline-eyebrow" data-animate="2"><span class="badge">KEYNOTE DECK</span><span>Project Explorer for the opencode TUI</span></div>
 <h1 class="display-hero" data-animate="3">A <span class="text-gradient">cairn</span> for your codebase.</h1>
-<p class="lead-text" data-animate="4">A colorful, collapsible file tree beside the MCP section — the shape of your project, always one glance away. Two files. Zero runtime deps. Tested on opencode v2.0.18.</p>
+<p class="lead-text" data-animate="4">A colorful, collapsible file tree beside the MCP section — the shape of your project, always one glance away. Live fs.watch refresh, show-all on demand. Two files. Zero runtime deps. Tested on opencode v2.0.18.</p>
 </div>
 
 <div class="slide-footer" data-animate="5">
@@ -1010,7 +1010,7 @@
 
 <div class="slide-footer" data-animate="5">
 <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-tertiary);">Cairn (n.) — stones that mark the trail</div>
-<div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-tertiary);">34-char sidebar • auto-shows on launch</div>
+<div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-tertiary);">34-char sidebar • silent live refresh • auto-shows</div>
 </div>
 </section>
 <!-- SLIDE 3: VISUALS -->
@@ -1073,15 +1073,15 @@
 <div class="tagline-eyebrow" data-animate="2"><span class="badge">CORE FEATURES</span><span>What you get</span></div>
 <h2 class="display-title" data-animate="3">Persistent tree, <span class="text-gradient">zero ceremony</span>.</h2>
 <div class="grid-4col" data-animate="4">
-<div class="glass-card"><span class="corner-tick tl"></span><span class="corner-tick br"></span><div class="metric-label">Tree</div><div style="font-weight:700;margin:6px 0;">▸/▾ per folder</div><p style="color:var(--text-secondary);font-size:.84rem;">Classic guides, 1–10 depth (default 3).</p></div>
+<div class="glass-card"><span class="corner-tick tl"></span><span class="corner-tick br"></span><div class="metric-label">Tree</div><div style="font-weight:700;margin:6px 0;">▸/▾ per folder</div><p style="color:var(--text-secondary);font-size:.84rem;">Classic guides, 1–15 depth (default 5).</p></div>
 <div class="glass-card"><span class="corner-tick tl"></span><span class="corner-tick br"></span><div class="metric-label">Open</div><div style="font-weight:700;margin:6px 0;">Click-to-open</div><p style="color:var(--text-secondary);font-size:.84rem;">OS assoc: start / open / xdg-open.</p></div>
 <div class="glass-card"><span class="corner-tick tl"></span><span class="corner-tick br"></span><div class="metric-label">Keys</div><div style="font-weight:700;margin:6px 0;">Palette-first</div><p style="color:var(--text-secondary);font-size:.84rem;">/cairn pick/next/prev over SSH.</p></div>
-<div class="glass-card"><span class="corner-tick tl"></span><span class="corner-tick br"></span><div class="metric-label">State</div><div style="font-weight:700;margin:6px 0;">cairn.params</div><p style="color:var(--text-secondary);font-size:.84rem;">Durable; survives restarts.</p></div>
+<div class="glass-card"><span class="corner-tick tl"></span><span class="corner-tick br"></span><div class="metric-label">State</div><div style="font-weight:700;margin:6px 0;">cairn.params</div><p style="color:var(--text-secondary);font-size:.84rem;">Durable; live watch + show-all.</p></div>
 </div>
 </div>
 
 <div class="slide-footer" data-animate="5">
-<div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-tertiary);">Skips: node_modules .git dist dist-electron graphify-out</div>
+<div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-tertiary);">Skips by default: node_modules .git dist dist-electron graphify-out • /cairn showall</div>
 <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-tertiary);">Zero runtime dependencies</div>
 </div>
 </section>
@@ -1121,7 +1121,7 @@
 <span class="fn">slot</span>({ append: <span class="str">"app"</span> }) <span class="cmt">// keymap</span>
 store(<span class="str">"cairn.params"</span>, {
   visible: <span class="str">true</span>, root: <span class="str">""</span>,
-  depth: <span class="str">3</span>, expanded: [], selected: <span class="str">""</span>
+  depth: <span class="str">5</span>, expanded: [], selected: <span class="str">""</span>
 })</code></pre></div></div>
 </div>
 </div>
@@ -1163,12 +1163,13 @@ store(<span class="str">"cairn.params"</span>, {
 /cairn open|close|toggle &lt;path&gt; | pick
 /cairn next | prev
 /cairn all | all collapse
+/cairn watch [on|off] | showall | no-showall
 /cairn &lt;path&gt; [depth]  <span class="cmt"># e.g. src 2</span>
 /cairn reset | help</code></pre></div>
 <div class="code-block"><pre><code><span class="cmt"># config (cairn.params)</span>
 visible = <span class="str">true</span>   <span class="cmt"># auto-show</span>
 root = <span class="str">""</span>       <span class="cmt"># = project</span>
-depth = <span class="str">3</span>        <span class="cmt"># 1..10</span>
+depth = <span class="str">5</span>        <span class="cmt"># 1..15</span>
 paneCollapsed = <span class="str">false</span>
 expanded = <span class="str">top dirs</span>
 selected = <span class="str">""</span></code></pre></div>
@@ -1245,12 +1246,12 @@ opencode --print-logs plugin list  <span class="cmt"># → cairn.server local ..
 <div class="grid-3col" data-animate="4">
 <div class="glass-card"><span class="corner-tick tl"></span><span class="corner-tick br"></span><h3 style="font-size:1.05rem;margin-bottom:8px;">Confirm platforms</h3><p style="color:var(--text-secondary);font-size:.9rem;">Windows primary. Need macOS/Linux terminal + OS reports.</p></div>
 <div class="glass-card"><span class="corner-tick tl"></span><span class="corner-tick br"></span><h3 style="font-size:1.05rem;margin-bottom:8px;">Perf notes</h3><p style="color:var(--text-secondary);font-size:.9rem;">Huge-tree timings, mouse behavior per terminal.</p></div>
-<div class="glass-card"><span class="corner-tick tl"></span><span class="corner-tick br"></span><h3 style="font-size:1.05rem;margin-bottom:8px;">Links</h3><p style="color:var(--text-secondary);font-size:.9rem;">Repo • Issues • v0.1.1 • opencode.ai (see footer).</p></div>
+<div class="glass-card"><span class="corner-tick tl"></span><span class="corner-tick br"></span><h3 style="font-size:1.05rem;margin-bottom:8px;">Links</h3><p style="color:var(--text-secondary);font-size:.9rem;">Repo • Issues • v0.2.0 • opencode.ai (see footer).</p></div>
 </div>
 </div>
 
 <div class="slide-footer" data-animate="5">
-<div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-tertiary);"><a href="https://github.com/amy220478/opencode-cairn" style="color:inherit;text-decoration:none;">opencode-cairn</a> • <a href="https://github.com/amy220478/opencode-cairn/issues" style="color:inherit;text-decoration:none;">issues</a> • <a href="https://github.com/amy220478/opencode-cairn/releases/tag/v0.1.1" style="color:inherit;text-decoration:none;">v0.1.1</a></div>
+<div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-tertiary);"><a href="https://github.com/amy220478/opencode-cairn" style="color:inherit;text-decoration:none;">opencode-cairn</a> • <a href="https://github.com/amy220478/opencode-cairn/issues" style="color:inherit;text-decoration:none;">issues</a> • <a href="https://github.com/amy220478/opencode-cairn/releases/tag/v0.2.0" style="color:inherit;text-decoration:none;">v0.2.0</a></div>
 <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-tertiary);">MIT • PRs welcome</div>
 </div>
 </section>
