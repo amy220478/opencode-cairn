@@ -1,9 +1,10 @@
 {
   "name": "opencode-cairn",
   "version": "0.2.0",
-  "description": "Project Explorer sidebar panel for the opencode TUI — colorful, collapsible file tree with click-to-open.",
+  "description": "Project Explorer sidebar panel for the opencode TUI — live-refreshing, collapsible file tree with click-to-open and show-all mode.",
   "author": "AH Core Solution",
   "license": "MIT",
+  "files": ["index.ts", "tui.tsx", "README.md", "LICENSE"],
   "repository": {
     "type": "git",
     "url": "https://github.com/amy220478/opencode-cairn.git"
