@@ -1,84 +1,1494 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
-<head>
+
+<html lang="en"><head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>opencode-cairn — Project Explorer for opencode TUI</title>
+<!-- Editorial & Precision Typography: Plus Jakarta Sans (UI/Body), Syne / Space Grotesk (Headings), JetBrains Mono (Metrics & Code) -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&amp;family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;family=Space+Grotesk:wght@500;600;700&amp;family=Syne:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Lucide Icons for clean iconography -->
+<script src="https://unpkg.com/lucide@latest"></script>
 <style>
-:root{--bg:#080A0F;--surface:rgba(255,255,255,.04);--border:rgba(255,255,255,.1);--text:#fff;--muted:rgba(255,255,255,.7);--accent:#F59E0B;--accent2:#38bdf8;--mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;--sans:'Plus Jakarta Sans',system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-[data-theme="light"]{--bg:#F8F9FA;--surface:#fff;--border:rgba(15,23,42,.12);--text:#0F172A;--muted:#475569;--accent:#D97706;--accent2:#0284C7}
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);overflow:hidden}
-.stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:32px 32px 84px}
-.deck{width:min(1100px,100%);height:min(640px,100%);position:relative}
-.slide{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;gap:16px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:48px 56px}
-.slide.active{display:flex}
-.eyebrow{font-family:var(--mono);font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
-h1{font-size:clamp(2rem,4.5vw,3.4rem);line-height:1.05;letter-spacing:-.03em}
-h2{font-size:clamp(1.5rem,3vw,2.2rem);letter-spacing:-.02em}
-p.lead{color:var(--muted);font-size:1.1rem;line-height:1.6;max-width:800px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-.card{border:1px solid var(--border);border-radius:12px;padding:18px;background:rgba(255,255,255,.02)}
-[data-theme="light"] .card{background:#fff}
-.card b{display:block;margin-bottom:6px}
-.card span,.card li{color:var(--muted);font-size:.92rem;line-height:1.55}
-code,.mono{font-family:var(--mono);font-size:.85em;background:rgba(127,127,127,.15);padding:2px 6px;border-radius:6px}
-pre{background:#040508;color:#CBD5E1;border:1px solid var(--border);border-radius:12px;padding:18px;font-family:var(--mono);font-size:.82rem;line-height:1.6;overflow:auto}
-[data-theme="light"] pre{background:#0F141C}
-img.shot{width:100%;border-radius:10px;border:1px solid var(--border)}
-.hud{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.6);border:1px solid var(--border);border-radius:999px;padding:6px 14px;font-family:var(--mono);font-size:.8rem;color:var(--muted);backdrop-filter:blur(10px)}
-[data-theme="light"] .hud{background:rgba(255,255,255,.9)}
-.hud button{background:transparent;border:1px solid var(--border);color:var(--text);border-radius:999px;width:28px;height:28px;cursor:pointer}
-.progress{position:fixed;bottom:0;left:0;right:0;display:flex;gap:6px;padding:0 24px 8px}
-.progress div{flex:1;height:3px;background:rgba(127,127,127,.3);border-radius:2px;cursor:pointer}
-.progress div.on{background:var(--accent)}
-a{color:var(--accent2)}
-ul{margin-left:20px;color:var(--muted);line-height:1.7}
-.top{position:fixed;top:16px;right:20px;display:flex;gap:8px}
-.top button{background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:999px;padding:6px 12px;font-family:var(--mono);font-size:.75rem;cursor:pointer}
-@media print{.hud,.top,.progress{display:none!important}html,body{overflow:visible}.stage{position:static;padding:0}.deck{max-width:none;height:auto}.slide{position:relative;display:flex!important;page-break-after:always;border:none}}
+  :root {
+    /* -------------------------------------------------------------
+       THEME CONFIGURATION & DESIGN TOKENS (Dark / Default)
+       ------------------------------------------------------------- */
+    --bg-base:          #080A0F;
+    --bg-surface:       rgba(255, 255, 255, 0.03);
+    --bg-surface-elev:  rgba(255, 255, 255, 0.06);
+    --border-subtle:    rgba(255, 255, 255, 0.09);
+    --border-highlight: rgba(255, 255, 255, 0.18);
+    --border-accent:    rgba(245, 158, 11, 0.45);
+
+    /* Accents (Obsidian Gold / Electric Copper palette) */
+    --accent:           #F59E0B;
+    --accent-glow:      rgba(245, 158, 11, 0.28);
+    --spotlight-inner:  rgba(245, 158, 11, 0.18);
+    --spotlight-mid:    rgba(217, 119, 6, 0.08);
+    --spotlight-outer:  rgba(245, 158, 11, 0.02);
+    --accent-gradient:  linear-gradient(135deg, #FDE68A 0%, #F59E0B 50%, #D97706 100%);
+    --accent-emerald:   #10B981;
+    --accent-cyan:      #06B6D4;
+    --badge-bg:         rgba(245, 158, 11, 0.12);
+    --badge-border:     rgba(245, 158, 11, 0.32);
+
+    /* Typographic Colors */
+    --text-primary:     #FFFFFF;
+    --text-secondary:   rgba(255, 255, 255, 0.72);
+    --text-tertiary:    #64748B;
+    --text-accent:      #FBBF24;
+
+    /* Technical Elements */
+    --grid-line:        rgba(255, 255, 255, 0.045);
+    --code-bg:          #040508;
+    --code-border:      rgba(255, 255, 255, 0.08);
+    --hud-bg:           rgba(13, 16, 23, 0.88);
+    --modal-bg:         #0C0E15;
+    --flow-bg:          rgba(255, 255, 255, 0.025);
+    --progress-track-bg:rgba(255, 255, 255, 0.12);
+
+    /* Dynamic Cursor Coordinates */
+    --cursor-x:         50vw;
+    --cursor-y:         50vh;
+
+    /* Type Scale & Fonts */
+    --font-heading:     'Syne', 'Space Grotesk', -apple-system, sans-serif;
+    --font-body:        'Plus Jakarta Sans', -apple-system, sans-serif;
+    --font-mono:        'JetBrains Mono', monospace;
+
+    /* Animation Timing */
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --stagger-delay: 70ms;
+  }
+
+  /* -------------------------------------------------------------
+     LIGHT THEME TOKEN OVERRIDES (Architectural Studio Off-White)
+     ------------------------------------------------------------- */
+  [data-theme="light"] {
+    --bg-base:          #F8F9FA;
+    --bg-surface:       rgba(255, 255, 255, 0.92);
+    --bg-surface-elev:  #FFFFFF;
+    --border-subtle:    rgba(15, 23, 42, 0.09);
+    --border-highlight: rgba(15, 23, 42, 0.18);
+    --border-accent:    rgba(217, 119, 6, 0.4);
+
+    --accent:           #D97706;
+    --accent-glow:      rgba(217, 119, 6, 0.16);
+    --spotlight-inner:  rgba(217, 119, 6, 0.14);
+    --spotlight-mid:    rgba(245, 158, 11, 0.05);
+    --spotlight-outer:  transparent;
+    --accent-gradient:  linear-gradient(135deg, #B45309 0%, #D97706 50%, #78350F 100%);
+    --accent-emerald:   #059669;
+    --accent-cyan:      #0284C7;
+    --badge-bg:         rgba(217, 119, 6, 0.10);
+    --badge-border:     rgba(217, 119, 6, 0.28);
+
+    --text-primary:     #0F172A;
+    --text-secondary:   #475569;
+    --text-tertiary:    #64748B;
+    --text-accent:      #B45309;
+
+    --grid-line:        rgba(15, 23, 42, 0.045);
+    --code-bg:          #0F141C;
+    --code-border:      #243042;
+    --hud-bg:           rgba(255, 255, 255, 0.94);
+    --modal-bg:         #FFFFFF;
+    --flow-bg:          rgba(255, 255, 255, 0.7);
+    --progress-track-bg:rgba(15, 23, 42, 0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    user-select: none;
+    transition: background-color 0.35s ease, color 0.35s ease;
+  }
+
+  /* -------------------------------------------------------------
+     BACKGROUND FX LAYER & CURSOR SPOTLIGHT
+     ------------------------------------------------------------- */
+  .bg-canvas {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  .bg-grid {
+    position: absolute;
+    inset: 0;
+    background-size: 52px 52px;
+    background-image: 
+      linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+    mask-image: radial-gradient(ellipse 95% 85% at 50% 50%, #000 65%, transparent 100%);
+  }
+
+  /* Dynamic CSS Variable Spotlight overlay */
+  .cursor-spotlight-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    background: radial-gradient(
+      700px circle at var(--cursor-x, 50vw) var(--cursor-y, 50vh),
+      var(--spotlight-inner) 0%,
+      var(--spotlight-mid) 40%,
+      var(--spotlight-outer) 70%,
+      transparent 100%
+    );
+    transition: background 0.25s ease;
+    mix-blend-mode: screen;
+  }
+
+  [data-theme="light"] .cursor-spotlight-layer {
+    mix-blend-mode: multiply;
+  }
+
+  /* Secondary smooth orb tracking element */
+  .bg-spotlight {
+    position: absolute;
+    width: 780px;
+    height: 780px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--accent-glow) 0%, rgba(245, 158, 11, 0.08) 35%, transparent 70%);
+    filter: blur(85px);
+    transform: translate(-50%, -50%);
+    transition: left 0.12s ease-out, top 0.12s ease-out, background 0.35s ease;
+    opacity: 0.95;
+    pointer-events: none;
+  }
+
+  /* -------------------------------------------------------------
+     MAIN PRESENTATION VIEWPORT (Clean, Unsquished, Never-Overlapping)
+     ------------------------------------------------------------- */
+  .presentation-stage {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  /* Aspect-ratio container sized generously for 100% zoom with safe clearance */
+  .deck-scale-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 1720px;
+    height: 100%;
+    max-height: 980px;
+    margin: 0 auto;
+    padding: clamp(20px, 3.2vh, 44px) clamp(28px, 4.5vw, 76px) clamp(76px, 10vh, 100px);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    pointer-events: auto;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    padding: inherit;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(14px) scale(0.995);
+    transition: opacity 0.45s var(--ease-out-expo), transform 0.45s var(--ease-out-expo);
+    overflow: hidden;
+  }
+
+  .slide.active {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+    z-index: 2;
+  }
+
+  /* -------------------------------------------------------------
+     ENTRANCE ANIMATIONS
+     ------------------------------------------------------------- */
+  @keyframes slideInUp {
+    0% {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .slide.active [data-animate="1"] { animation: slideInUp 0.55s var(--ease-out-expo) forwards calc(var(--stagger-delay) * 1); }
+  .slide.active [data-animate="2"] { animation: slideInUp 0.55s var(--ease-out-expo) forwards calc(var(--stagger-delay) * 2); }
+  .slide.active [data-animate="3"] { animation: slideInUp 0.55s var(--ease-out-expo) forwards calc(var(--stagger-delay) * 3); }
+  .slide.active [data-animate="4"] { animation: slideInUp 0.55s var(--ease-out-expo) forwards calc(var(--stagger-delay) * 4); }
+  .slide.active [data-animate="5"] { animation: slideInUp 0.55s var(--ease-out-expo) forwards calc(var(--stagger-delay) * 5); }
+
+  [data-animate] {
+    opacity: 0;
+  }
+
+  /* -------------------------------------------------------------
+     TYPOGRAPHY PRIMITIVES (Uncompressed, Wide, Normal Font Stretch)
+     ------------------------------------------------------------- */
+  .tagline-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--font-mono);
+    font-size: clamp(0.75rem, 0.85vw, 0.88rem);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: clamp(12px, 1.8vh, 22px);
+  }
+
+  .tagline-eyebrow .badge {
+    padding: 3px 10px;
+    background: var(--badge-bg);
+    border: 1px solid var(--badge-border);
+    border-radius: 4px;
+    color: var(--accent);
+    font-size: clamp(0.72rem, 0.8vw, 0.82rem);
+    letter-spacing: 0.07em;
+  }
+
+  /* RESTORED HEADLINE: Syne 800, Normal Stretch, No Flattening, Perfectly Balanced */
+  .display-hero {
+    font-family: var(--font-heading);
+    font-size: clamp(2.4rem, 4.2vw, 4.4rem);
+    font-weight: 800;
+    font-stretch: normal;
+    font-style: normal;
+    line-height: 1.08;
+    letter-spacing: -0.032em;
+    color: var(--text-primary);
+    text-wrap: balance;
+    margin-bottom: clamp(16px, 2.4vh, 28px);
+    max-width: 1400px;
+  }
+
+  .display-title {
+    font-family: var(--font-heading);
+    font-size: clamp(1.8rem, 2.8vw, 2.9rem);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.025em;
+    color: var(--text-primary);
+    margin-bottom: clamp(12px, 1.8vh, 18px);
+    text-wrap: balance;
+  }
+
+  .lead-text {
+    font-family: var(--font-body);
+    font-size: clamp(1rem, 1.25vw, 1.32rem);
+    font-weight: 400;
+    line-height: 1.55;
+    color: var(--text-secondary);
+    max-width: 850px;
+  }
+
+  .text-gradient {
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+  }
+
+  /* -------------------------------------------------------------
+     CARDS & LAYOUT GRIDS
+     ------------------------------------------------------------- */
+  .glass-card {
+    position: relative;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    padding: clamp(20px, 2.4vw, 32px) clamp(18px, 2vw, 28px);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    overflow: hidden;
+    transition: transform 0.3s var(--ease-out-expo), border-color 0.25s ease, background 0.25s ease;
+  }
+
+  .glass-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--border-highlight);
+    background: var(--bg-surface-elev);
+  }
+
+  .glass-card .corner-tick {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border: 1px solid var(--accent);
+    opacity: 0.55;
+  }
+  .glass-card .corner-tick.tl { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+  .glass-card .corner-tick.br { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+
+  .grid-2col {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: clamp(28px, 4vw, 56px);
+    align-items: center;
+    width: 100%;
+    margin: auto 0;
+  }
+
+  .grid-3col {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: clamp(18px, 2vw, 28px);
+    width: 100%;
+    margin-top: clamp(16px, 3vh, 32px);
+  }
+
+  .grid-4col {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: clamp(14px, 1.8vw, 24px);
+    width: 100%;
+    margin-top: clamp(16px, 3vh, 32px);
+  }
+
+  /* Metric KPI Block */
+  .metric-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .metric-val {
+    font-family: var(--font-heading);
+    font-size: clamp(2rem, 2.6vw, 2.8rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    color: var(--text-primary);
+  }
+
+  .metric-delta {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--accent-emerald);
+    font-weight: 500;
+  }
+
+  .metric-label {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  /* Flow node block */
+  .flow-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: clamp(12px, 1.6vh, 18px) clamp(14px, 1.6vw, 20px);
+    background: var(--flow-bg);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    margin-bottom: 12px;
+    backdrop-filter: blur(8px);
+  }
+
+  .flow-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: var(--badge-bg);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* Code block */
+  .code-block {
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    border-radius: 12px;
+    padding: clamp(18px, 2.2vw, 26px);
+    font-family: var(--font-mono);
+    font-size: clamp(0.78rem, 0.9vw, 0.88rem);
+    line-height: 1.65;
+    color: #CBD5E1;
+    box-shadow: 0 16px 36px -12px rgba(0,0,0,0.45);
+  }
+
+  .code-block .kwd { color: #F59E0B; font-weight: 500; }
+  .code-block .str { color: #34D399; }
+  .code-block .fn  { color: #60A5FA; }
+  .code-block .cmt { color: #64748B; font-style: italic; }
+
+  /* -------------------------------------------------------------
+     SLIDE HEADER & CLEAN FOOTER ZONE (Non-overlapping)
+     ------------------------------------------------------------- */
+  .slide-header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: clamp(12px, 1.8vh, 18px);
+    flex-shrink: 0;
+  }
+
+  .deck-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-mono);
+    font-size: clamp(0.78rem, 0.85vw, 0.86rem);
+    color: var(--text-secondary);
+    letter-spacing: 0.05em;
+  }
+
+  .deck-brand-pill {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  .deck-classification {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    padding: 4px 10px;
+    border-radius: 100px;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* Segmented Theme Switcher */
+  .theme-switcher {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 100px;
+    gap: 2px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .theme-switcher:hover {
+    border-color: var(--border-highlight);
+  }
+
+  .theme-btn {
+    border: none;
+    background: transparent;
+    color: var(--text-tertiary);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .theme-btn.active {
+    background: var(--accent);
+    color: #000;
+    box-shadow: 0 2px 6px var(--accent-glow);
+  }
+
+  .theme-hint {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: var(--border-subtle);
+    color: var(--text-tertiary);
+    margin: 0 3px 0 1px;
+  }
+
+  /* Export PDF Header Button */
+  .pdf-export-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 100px;
+    padding: 4px 11px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .pdf-export-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--badge-bg);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--accent-glow);
+  }
+
+  /* Slide Content Box with Flexible Vertical Distribution */
+  .slide-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(14px, 2.2vh, 32px) 0;
+  }
+
+  /* Slide Bottom Metadata Bar (Sits comfortably above the HUD) */
+  .slide-footer {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-top: 1px solid var(--border-subtle);
+    padding-top: clamp(12px, 1.8vh, 18px);
+    flex-shrink: 0;
+  }
+
+  .meta-col-group {
+    display: flex;
+    gap: clamp(24px, 3.5vw, 44px);
+    align-items: center;
+  }
+
+  .meta-col-label {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 3px;
+  }
+
+  .meta-col-val {
+    font-size: clamp(0.92rem, 1vw, 1.02rem);
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .meta-nav-hint {
+    font-family: var(--font-mono);
+    font-size: clamp(0.72rem, 0.8vw, 0.8rem);
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  /* -------------------------------------------------------------
+     FIXED BOTTOM CONTROLS (Dedicated Docking Zone, Zero Clashing)
+     ------------------------------------------------------------- */
+  /* Left button: AI Agent Spec */
+  .agent-guide-toggle {
+    position: fixed;
+    bottom: 24px;
+    left: clamp(24px, 4vw, 64px);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--hud-bg);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    transition: all 0.2s ease;
+    z-index: 100;
+  }
+
+  .agent-guide-toggle:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--badge-bg);
+  }
+
+  /* Right HUD controls: < 1 / 4 > and Theme Icon */
+  .hud-controller {
+    position: fixed;
+    bottom: 22px;
+    right: clamp(24px, 4vw, 64px);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--hud-bg);
+    border: 1px solid var(--border-highlight);
+    border-radius: 50px;
+    padding: 5px 10px 5px 10px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    z-index: 100;
+    box-shadow: 0 10px 28px rgba(0,0,0,0.3);
+  }
+
+  .hud-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--bg-surface-elev);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+
+  .hud-btn:hover {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+    transform: scale(1.05);
+  }
+
+  .hud-btn-pdf {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0 10px;
+    height: 32px;
+    border-radius: 20px;
+    background: var(--bg-surface-elev);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+
+  .hud-btn-pdf:hover {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+
+  .hud-indicator {
+    font-family: var(--font-mono);
+    font-size: 0.84rem;
+    color: var(--text-secondary);
+    min-width: 48px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .hud-divider {
+    width: 1px;
+    height: 16px;
+    background: var(--border-subtle);
+  }
+
+  /* Bottom Progress Bar Strips */
+  .presentation-progress {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    gap: 6px;
+    padding: 0 clamp(24px, 4vw, 64px) 8px;
+    z-index: 99;
+  }
+
+  .progress-track {
+    flex: 1;
+    height: 3px;
+    background: var(--progress-track-bg);
+    border-radius: 2px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: height 0.2s ease, background 0.25s ease;
+  }
+
+  .progress-track:hover {
+    height: 5px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    transition: width 0.35s var(--ease-out-expo);
+  }
+
+  .progress-track.active .progress-fill {
+    width: 100%;
+  }
+
+  /* Modal Sheet for Agent Instructions */
+  .agent-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(16px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+
+  .agent-modal.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .modal-panel {
+    background: var(--modal-bg);
+    border: 1px solid var(--border-highlight);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 82vh;
+    padding: 34px;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+    color: var(--text-primary);
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 22px;
+    right: 22px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+  .modal-close:hover { color: var(--text-primary); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .slide, .slide * {
+      animation: none !important;
+      transition: opacity 0.1s linear !important;
+      transform: none !important;
+    }
+  }
+
+  /* -------------------------------------------------------------
+     DEDICATED PRINT / PDF EXPORT ENGINE
+     ------------------------------------------------------------- */
+  @page {
+    size: 16in 9in landscape;
+    margin: 0;
+  }
+
+  @media print {
+    *, *::before, *::after {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
+      text-shadow: none !important;
+    }
+
+    html, body {
+      width: 100% !important;
+      height: auto !important;
+      overflow: visible !important;
+      background: #080A0F !important;
+      color: #FFFFFF !important;
+    }
+
+    [data-theme="light"] html,
+    [data-theme="light"] body {
+      background: #F8F9FA !important;
+      color: #0F172A !important;
+    }
+
+    /* Hide background FX and interactive chrome */
+    .bg-canvas,
+    .cursor-spotlight-layer,
+    .hud-controller,
+    .agent-guide-toggle,
+    .presentation-progress,
+    .agent-modal,
+    .theme-hint,
+    .pdf-export-btn,
+    .theme-switcher {
+      display: none !important;
+    }
+
+    .presentation-stage {
+      position: static !important;
+      width: 100% !important;
+      height: auto !important;
+      display: block !important;
+      overflow: visible !important;
+      pointer-events: auto !important;
+    }
+
+    .deck-scale-wrapper {
+      position: static !important;
+      width: 100% !important;
+      max-width: none !important;
+      height: auto !important;
+      max-height: none !important;
+      padding: 0 !important;
+      display: block !important;
+    }
+
+    .slide {
+      position: relative !important;
+      inset: auto !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      page-break-after: always !important;
+      break-after: page !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+      opacity: 1 !important;
+      transform: none !important;
+      pointer-events: auto !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: space-between !important;
+      padding: 3.5rem 5rem !important;
+      overflow: hidden !important;
+      box-sizing: border-box !important;
+    }
+
+    .slide [data-animate] {
+      opacity: 1 !important;
+      animation: none !important;
+      transform: none !important;
+    }
+
+    .slide-body {
+      flex: 1 !important;
+      justify-content: center !important;
+    }
+
+    .glass-card {
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      background: rgba(255, 255, 255, 0.05) !important;
+      border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    }
+
+    [data-theme="light"] .glass-card {
+      background: #FFFFFF !important;
+      border: 1px solid rgba(15, 23, 42, 0.12) !important;
+    }
+
+    .code-block {
+      box-shadow: none !important;
+    }
+  }
 </style>
 </head>
 <body>
-<div class="top"><button onclick="toggleTheme()">T • Theme</button><button onclick="window.print()">P • PDF</button></div>
-<div class="stage"><div class="deck">
-<section class="slide active"><div class="eyebrow">opencode-cairn • v0.1.0 • MIT</div><h1>Project Explorer for the <span style="color:var(--accent)">opencode TUI</span></h1><p class="lead"><b>Cairn</b> (n.) — a small pile of stones that marks the trail. This plugin marks yours through the codebase. Colorful, collapsible file tree beside the MCP section.</p><p class="mono">github.com/amy220478/opencode-cairn • 2 files • zero runtime deps • opencode v2</p></section>
-<section class="slide"><div class="eyebrow">Problem</div><h2>Lost in the codebase?</h2><div class="grid3"><div class="card"><b>No map</b><span>TUI chat hides project shape. You ls, forget, re-ls.</span></div><div class="card"><b>Mouse gaps</b><span>SSH terminals lack mouse. Need keyboard-first nav.</span></div><div class="card"><b>State loss</b><span>Panels reset on restart. Folders collapse every time.</span></div></div><p class="lead">Cairn pins a persistent 34-char sidebar tree — always one glance away.</p></section>
-<section class="slide"><div class="eyebrow">Visual overview • real TUI captures</div><h2>Expanded → collapsed</h2><div class="grid2"><div><img class="shot" src="./assets/explorer-open.png" alt="expanded"/><p class="mono">expanded — guides + colors</p></div><div><img class="shot" src="./assets/explorer-collapsed.png" alt="collapsed"/><p class="mono">collapsed — one line</p></div></div></section>
-<section class="slide"><div class="eyebrow">Core features</div><h2>Small, fast, persistent</h2><ul><li>Persistent tree, per-folder <code>▸/▾</code> + <code>├── / └──</code> guides</li><li>Color-coded: folders sky-blue, ts blue, js yellow, json/yaml green, md purple, html/css orange, media pink, configs gray</li><li>Click folder to toggle, click file to open via OS (<code>start / open / xdg-open</code>)</li><li>Keyboard + palette guaranteed over SSH; mouse best-effort</li><li>Auto-shows on launch, state in <code>cairn.params</code> survives restarts</li><li>Skips <code>node_modules .git dist graphify-out</code> • depth 1–10, default 3</li></ul></section>
-<section class="slide"><div class="eyebrow">How it works</div><h2>Two files</h2><div class="grid2"><div class="card"><b>index.ts — cairn.server</b><span>Server stub. Plugin.define(id only).</span></div><div class="card"><b>tui.tsx — cairn.cli</b><span>sidebar.content slot renders tree; app slot registers keymap, slash + palette.</span></div></div><pre>slots: sidebar.content → tree (34ch, pure render)
-       app → commands (/cairn*, Cairn: *)
-store: cairn.params { visible, root, depth, paneCollapsed, expanded[], selected }</pre></section>
-<section class="slide"><div class="eyebrow">Commands + config</div><h2>Palette-first</h2><div class="grid2"><pre>/cairn ............ toggle panel
-/cairn expand|collapse
-/cairn toggle &lt;path&gt; • pick
-/cairn next|prev • edit [path]
-/cairn all|all collapse
-/cairn src 2 • reset • help</pre><pre>visible=true  • auto-show
-root="" (= project)
-depth=3 (1-10)
-paneCollapsed=false
-expanded=top dirs
-selected=""</pre></div></section>
-<section class="slide"><div class="eyebrow">Install • 30 seconds</div><h2>Copy, restart, done</h2><pre># Windows
-Copy-Item -Recurse ./opencode-cairn "$env:USERPROFILE/.config/opencode/plugins/opencode-cairn"
-# macOS / Linux
+<!-- Background Visual Effects Engine -->
+<div class="bg-canvas">
+<div class="bg-grid"></div>
+<div class="bg-spotlight" id="global-spotlight"></div>
+</div>
+<!-- Luminous ambient cursor spotlight overlay -->
+<div class="cursor-spotlight-layer" id="cursor-spotlight-layer"></div>
+<!-- =========================================================================
+     PRESENTATION VIEWPORT STAGE
+     ========================================================================= -->
+<div class="presentation-stage">
+<div class="deck-scale-wrapper">
+<!-- =====================================================
+         SLIDE 1: HERO TITLE / EXECUTIVE COVER ARCHETYPE
+         ===================================================== -->
+<!-- SLIDE 1: COVER -->
+<section class="slide active" data-slide-title="Cover" id="slide-0">
+
+<div class="slide-header" data-animate="1">
+<div class="deck-brand">
+<span class="deck-brand-pill"></span>
+<span>OPENCODE-CAIRN • V0.1.0</span>
+</div>
+<div class="header-actions">
+<button class="pdf-export-btn" onclick="exportDeckToPDF()" title="Download PDF Presentation (P)">
+<i data-lucide="arrow-down-to-line" style="width:13px;height:13px;"></i>
+<span>PDF</span>
+</button>
+<div class="theme-switcher" onclick="toggleTheme()" role="button" title="Toggle Theme (or press 'T')">
+<button class="theme-btn active" data-mode="dark" type="button"><i data-lucide="moon" style="width:13px;height:13px;"></i></button>
+<button class="theme-btn" data-mode="light" type="button"><i data-lucide="sun" style="width:13px;height:13px;"></i></button>
+<span class="theme-hint">T</span>
+</div>
+<span class="deck-classification">MIT • opencode v2</span>
+</div>
+</div>
+<div class="slide-body">
+<div class="tagline-eyebrow" data-animate="2"><span class="badge">KEYNOTE DECK</span><span>Project Explorer for the opencode TUI</span></div>
+<h1 class="display-hero" data-animate="3">A <span class="text-gradient">cairn</span> for your codebase.</h1>
+<p class="lead-text" data-animate="4">A colorful, collapsible file tree beside the MCP section — the shape of your project, always one glance away. Two files. Zero runtime deps. Tested on opencode v2.0.18.</p>
+</div>
+
+<div class="slide-footer" data-animate="5">
+<div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-tertiary);">github.com/amy220478/opencode-cairn</div>
+<div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-tertiary);">Press → or Space • 'P' for PDF</div>
+</div>
+</section>
+<!-- SLIDE 2: PROBLEM -->
+<section class="slide" data-slide-title="Problem" id="slide-1">
+
+<div class="slide-header" data-animate="1">
+<div class="deck-brand">
+<span class="deck-brand-pill"></span>
+<span>SECTION 01 • PROBLEM</span>
+</div>
+<div class="header-actions">
+<button class="pdf-export-btn" onclick="exportDeckToPDF()" title="Download PDF Presentation (P)">
+<i data-lucide="arrow-down-to-line" style="width:13px;height:13px;"></i>
+<span>PDF</span>
+</button>
+<div class="theme-switcher" onclick="toggleTheme()" role="button" title="Toggle Theme (or press 'T')">
+<button class="theme-btn active" data-mode="dark" type="button"><i data-lucide="moon" style="width:13px;height:13px;"></i></button>
+<button class="theme-btn" data-mode="light" type="button"><i data-lucide="sun" style="width:13px;height:13px;"></i></button>
+<span class="theme-hint">T</span>
+</div>
+<span class="deck-classification">Why it exists</span>
+</div>
+</div>
+<div class="slide-body">
+<div class="tagline-eyebrow" data-animate="2"><span class="badge">PROBLEM</span><span>Lost in the codebase</span></div>
+<h2 class="display-title" data-animate="3">TUI chat hides the <span class="text-gradient">shape of the project</span>.</h2>
+<div class="grid-3col" data-animate="4">
+<div class="glass-card"><span class="corner-tick tl"></span><span class="corner-tick br"></span><h3 style="font-size:1.05rem;margin-bottom:8px;">No map</h3><p style="color:var(--text-secondary);font-size:.9rem;">You ls, forget, re-ls. No persistent tree next to chat.</p></div>
+<div class="glass-card"><span class="corner-tick tl"></span><span class="corner-tick br"></span><h3 style="font-size:1.05rem;margin-bottom:8px;">Mouse gaps</h3><p style="color:var(--text-secondary);font-size:.9rem;">Plain SSH terminals lack mouse. Keyboard path must always work.</p></div>
+<div class="glass-card"><span class="corner-tick tl"></span><span class="corner-tick br"></span><h3 style="font-size:1.05rem;margin-bottom:8px;">State loss</h3><p style="color:var(--text-secondary);font-size:.9rem;">Panels reset on restart; folders collapse every time.</p></div>
+</div>
+</div>
+
+<div class="slide-footer" data-animate="5">
+<div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-tertiary);">Cairn (n.) — stones that mark the trail</div>
+<div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-tertiary);">34-char sidebar • auto-shows on launch</div>
+</div>
+</section>
+<!-- SLIDE 3: VISUALS -->
+<section class="slide" data-slide-title="Visuals" id="slide-2">
+
+<div class="slide-header" data-animate="1">
+<div class="deck-brand">
+<span class="deck-brand-pill"></span>
+<span>SECTION 02 • VISUALS</span>
+</div>
+<div class="header-actions">
+<button class="pdf-export-btn" onclick="exportDeckToPDF()" title="Download PDF Presentation (P)">
+<i data-lucide="arrow-down-to-line" style="width:13px;height:13px;"></i>
+<span>PDF</span>
+</button>
+<div class="theme-switcher" onclick="toggleTheme()" role="button" title="Toggle Theme (or press 'T')">
+<button class="theme-btn active" data-mode="dark" type="button"><i data-lucide="moon" style="width:13px;height:13px;"></i></button>
+<button class="theme-btn" data-mode="light" type="button"><i data-lucide="sun" style="width:13px;height:13px;"></i></button>
+<span class="theme-hint">T</span>
+</div>
+<span class="deck-classification">Real TUI captures</span>
+</div>
+</div>
+<div class="slide-body">
+<div class="tagline-eyebrow" data-animate="2"><span class="badge">VISUAL OVERVIEW</span><span>Expanded vs collapsed</span></div>
+<h2 class="display-title" data-animate="3">One glance, <span class="text-gradient">two states</span>.</h2>
+<div class="grid-2col" data-animate="4">
+<div class="glass-card"><span class="corner-tick tl"></span><span class="corner-tick br"></span><div style="font-family:var(--font-mono);font-size:.75rem;color:var(--text-tertiary);margin-bottom:10px;">assets/explorer-open.png</div><img src="./assets/explorer-open.png" alt="expanded tree" style="width:100%;border-radius:10px;border:1px solid var(--border-subtle);"/><p style="color:var(--text-secondary);font-size:.85rem;margin-top:10px;">Expanded — guide lines + color-coded types.</p></div>
+<div class="glass-card"><span class="corner-tick tl"></span><span class="corner-tick br"></span><div style="font-family:var(--font-mono);font-size:.75rem;color:var(--text-tertiary);margin-bottom:10px;">assets/explorer-collapsed.png</div><img src="./assets/explorer-collapsed.png" alt="collapsed pane" style="width:100%;border-radius:10px;border:1px solid var(--border-subtle);"/><p style="color:var(--text-secondary);font-size:.85rem;margin-top:10px;">Collapsed — one line until you need it.</p></div>
+</div>
+</div>
+
+<div class="slide-footer" data-animate="5">
+<div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-tertiary);">Folders sky-blue • ts/js/json/md/html/media/config colors</div>
+<div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-tertiary);">▸/▾ + ├── / └── guides</div>
+</div>
+</section>
+<!-- SLIDE 4: FEATURES -->
+<section class="slide" data-slide-title="Features" id="slide-3">
+
+<div class="slide-header" data-animate="1">
+<div class="deck-brand">
+<span class="deck-brand-pill"></span>
+<span>SECTION 03 • FEATURES</span>
+</div>
+<div class="header-actions">
+<button class="pdf-export-btn" onclick="exportDeckToPDF()" title="Download PDF Presentation (P)">
+<i data-lucide="arrow-down-to-line" style="width:13px;height:13px;"></i>
+<span>PDF</span>
+</button>
+<div class="theme-switcher" onclick="toggleTheme()" role="button" title="Toggle Theme (or press 'T')">
+<button class="theme-btn active" data-mode="dark" type="button"><i data-lucide="moon" style="width:13px;height:13px;"></i></button>
+<button class="theme-btn" data-mode="light" type="button"><i data-lucide="sun" style="width:13px;height:13px;"></i></button>
+<span class="theme-hint">T</span>
+</div>
+<span class="deck-classification">Small, fast, persistent</span>
+</div>
+</div>
+<div class="slide-body">
+<div class="tagline-eyebrow" data-animate="2"><span class="badge">CORE FEATURES</span><span>What you get</span></div>
+<h2 class="display-title" data-animate="3">Persistent tree, <span class="text-gradient">zero ceremony</span>.</h2>
+<div class="grid-4col" data-animate="4">
+<div class="glass-card"><span class="corner-tick tl"></span><span class="corner-tick br"></span><div class="metric-label">Tree</div><div style="font-weight:700;margin:6px 0;">▸/▾ per folder</div><p style="color:var(--text-secondary);font-size:.84rem;">Classic guides, 1–10 depth (default 3).</p></div>
+<div class="glass-card"><span class="corner-tick tl"></span><span class="corner-tick br"></span><div class="metric-label">Open</div><div style="font-weight:700;margin:6px 0;">Click-to-open</div><p style="color:var(--text-secondary);font-size:.84rem;">OS assoc: start / open / xdg-open.</p></div>
+<div class="glass-card"><span class="corner-tick tl"></span><span class="corner-tick br"></span><div class="metric-label">Keys</div><div style="font-weight:700;margin:6px 0;">Palette-first</div><p style="color:var(--text-secondary);font-size:.84rem;">/cairn pick/next/prev over SSH.</p></div>
+<div class="glass-card"><span class="corner-tick tl"></span><span class="corner-tick br"></span><div class="metric-label">State</div><div style="font-weight:700;margin:6px 0;">cairn.params</div><p style="color:var(--text-secondary);font-size:.84rem;">Durable; survives restarts.</p></div>
+</div>
+</div>
+
+<div class="slide-footer" data-animate="5">
+<div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-tertiary);">Skips: node_modules .git dist graphify-out</div>
+<div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-tertiary);">Zero runtime dependencies</div>
+</div>
+</section>
+<!-- SLIDE 5: HOW IT WORKS -->
+<section class="slide" data-slide-title="How it works" id="slide-4">
+
+<div class="slide-header" data-animate="1">
+<div class="deck-brand">
+<span class="deck-brand-pill"></span>
+<span>SECTION 04 • ARCHITECTURE</span>
+</div>
+<div class="header-actions">
+<button class="pdf-export-btn" onclick="exportDeckToPDF()" title="Download PDF Presentation (P)">
+<i data-lucide="arrow-down-to-line" style="width:13px;height:13px;"></i>
+<span>PDF</span>
+</button>
+<div class="theme-switcher" onclick="toggleTheme()" role="button" title="Toggle Theme (or press 'T')">
+<button class="theme-btn active" data-mode="dark" type="button"><i data-lucide="moon" style="width:13px;height:13px;"></i></button>
+<button class="theme-btn" data-mode="light" type="button"><i data-lucide="sun" style="width:13px;height:13px;"></i></button>
+<span class="theme-hint">T</span>
+</div>
+<span class="deck-classification">Two files</span>
+</div>
+</div>
+<div class="slide-body">
+<div class="grid-2col">
+<div>
+<div class="tagline-eyebrow" data-animate="2"><span class="badge">SPECIFICATION</span><span>Two-file plugin</span></div>
+<h2 class="display-title" data-animate="3">Slots + <span class="text-gradient">durable store</span>.</h2>
+<div data-animate="4">
+<div class="flow-item"><div class="flow-icon"><i data-lucide="folder-tree" style="width:18px;height:18px;"></i></div><div><div style="font-weight:600;">sidebar.content → tree</div><div style="font-size:.85rem;color:var(--text-secondary);">Pure render, 34ch, never writes state.</div></div></div>
+<div class="flow-item"><div class="flow-icon"><i data-lucide="command" style="width:18px;height:18px;"></i></div><div><div style="font-weight:600;">app → commands</div><div style="font-size:.85rem;color:var(--text-secondary);">Slash /cairn* + palette Cairn: *.</div></div></div>
+</div>
+</div>
+<div data-animate="4"><div class="code-block"><div style="display:flex;justify-content:space-between;margin-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:8px;"><span style="color:var(--text-tertiary);font-size:0.78rem;">tui.tsx</span><span style="color:var(--accent);font-size:0.78rem;">Solid • opentui</span></div><pre><code><span class="cmt">// slots + durable params</span>
+<span class="fn">slot</span>({ append: <span class="str">"sidebar.content"</span> })
+<span class="fn">slot</span>({ append: <span class="str">"app"</span> }) <span class="cmt">// keymap</span>
+store(<span class="str">"cairn.params"</span>, {
+  visible: <span class="str">true</span>, root: <span class="str">""</span>,
+  depth: <span class="str">3</span>, expanded: [], selected: <span class="str">""</span>
+})</code></pre></div></div>
+</div>
+</div>
+
+<div class="slide-footer" data-animate="5">
+<div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-tertiary);">index.ts = cairn.server stub</div>
+<div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-tertiary);">tui.tsx = cairn.cli panel</div>
+</div>
+</section>
+<!-- SLIDE 6: COMMANDS -->
+<section class="slide" data-slide-title="Commands" id="slide-5">
+
+<div class="slide-header" data-animate="1">
+<div class="deck-brand">
+<span class="deck-brand-pill"></span>
+<span>SECTION 05 • COMMANDS</span>
+</div>
+<div class="header-actions">
+<button class="pdf-export-btn" onclick="exportDeckToPDF()" title="Download PDF Presentation (P)">
+<i data-lucide="arrow-down-to-line" style="width:13px;height:13px;"></i>
+<span>PDF</span>
+</button>
+<div class="theme-switcher" onclick="toggleTheme()" role="button" title="Toggle Theme (or press 'T')">
+<button class="theme-btn active" data-mode="dark" type="button"><i data-lucide="moon" style="width:13px;height:13px;"></i></button>
+<button class="theme-btn" data-mode="light" type="button"><i data-lucide="sun" style="width:13px;height:13px;"></i></button>
+<span class="theme-hint">T</span>
+</div>
+<span class="deck-classification">Palette-first</span>
+</div>
+</div>
+<div class="slide-body">
+<div class="tagline-eyebrow" data-animate="2"><span class="badge">COMMANDS</span><span>Slash + palette</span></div>
+<h2 class="display-title" data-animate="3">Everything via <span class="text-gradient">/cairn</span>.</h2>
+<div class="grid-2col" data-animate="4">
+<div class="code-block"><pre><code><span class="cmt"># panel + pane</span>
+/cairn <span class="cmt"># toggle panel</span>
+/cairn expand | collapse
+<span class="cmt"># folders</span>
+/cairn toggle &lt;path&gt; | pick
+/cairn next | prev
+/cairn all | all collapse
+/cairn src 2 | reset | help</code></pre></div>
+<div class="code-block"><pre><code><span class="cmt"># config (cairn.params)</span>
+visible = <span class="str">true</span>   <span class="cmt"># auto-show</span>
+root = <span class="str">""</span>       <span class="cmt"># = project</span>
+depth = <span class="str">3</span>        <span class="cmt"># 1..10</span>
+paneCollapsed = <span class="str">false</span>
+expanded = <span class="str">top dirs</span>
+selected = <span class="str">""</span></code></pre></div>
+</div>
+</div>
+
+<div class="slide-footer" data-animate="5">
+<div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-tertiary);">/cairn edit [path] opens file</div>
+<div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-tertiary);">Mouse best-effort • keys guaranteed</div>
+</div>
+</section>
+<!-- SLIDE 7: INSTALL -->
+<section class="slide" data-slide-title="Install" id="slide-6">
+
+<div class="slide-header" data-animate="1">
+<div class="deck-brand">
+<span class="deck-brand-pill"></span>
+<span>SECTION 06 • INSTALL</span>
+</div>
+<div class="header-actions">
+<button class="pdf-export-btn" onclick="exportDeckToPDF()" title="Download PDF Presentation (P)">
+<i data-lucide="arrow-down-to-line" style="width:13px;height:13px;"></i>
+<span>PDF</span>
+</button>
+<div class="theme-switcher" onclick="toggleTheme()" role="button" title="Toggle Theme (or press 'T')">
+<button class="theme-btn active" data-mode="dark" type="button"><i data-lucide="moon" style="width:13px;height:13px;"></i></button>
+<button class="theme-btn" data-mode="light" type="button"><i data-lucide="sun" style="width:13px;height:13px;"></i></button>
+<span class="theme-hint">T</span>
+</div>
+<span class="deck-classification">30 seconds</span>
+</div>
+</div>
+<div class="slide-body">
+<div class="tagline-eyebrow" data-animate="2"><span class="badge">GETTING STARTED</span><span>Copy, restart, done</span></div>
+<h2 class="display-title" data-animate="3">No build. <span class="text-gradient">No install step.</span></h2>
+<div data-animate="4"><div class="code-block"><pre><code><span class="cmt"># Windows</span>
+Copy-Item -Recurse ./opencode-cairn <span class="str">"$env:USERPROFILE/.config/opencode/plugins/opencode-cairn"</span>
+<span class="cmt"># macOS / Linux</span>
 cp -r ./opencode-cairn ~/.config/opencode/plugins/opencode-cairn
-# verify
-opencode --print-logs plugin list  # → cairn.server local ...</pre><p class="lead">Uninstall: delete folder + restart. No build, no <code>bun install</code>.</p></section>
-<section class="slide"><div class="eyebrow">Roadmap + contribute</div><h2>Links</h2><ul><li>Tested: Windows primary, opencode v2.0.18. macOS/Linux click-to-open needs reports.</li><li>PRs welcome: terminal+OS screenshots, huge-tree perf notes, mouse reports.</li><li>Repo: <a href="https://github.com/amy220478/opencode-cairn">github.com/amy220478/opencode-cairn</a></li><li>Issues: <a href="https://github.com/amy220478/opencode-cairn/issues">/issues</a> • Release: <a href="https://github.com/amy220478/opencode-cairn/releases/tag/v0.1.0">v0.1.0</a> • Platform: <a href="https://opencode.ai">opencode.ai</a></li></ul></section>
-</div></div>
-<nav class="hud"><button id="prev">‹</button><span id="count">1 / 8</span><button id="next">›</button><span>← → space • T theme • P pdf</span></nav>
-<div class="progress" id="prog"></div>
+<span class="cmt"># verify + use</span>
+opencode --print-logs plugin list  <span class="cmt"># → cairn.server local ...</span>
+<span class="cmt"># panel appears on first launch — no setup command</span></code></pre></div></div>
+</div>
+
+<div class="slide-footer" data-animate="5">
+<div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-tertiary);">Uninstall: delete folder + restart</div>
+<div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-tertiary);">State discarded with host storage</div>
+</div>
+</section>
+<!-- SLIDE 8: ROADMAP -->
+<section class="slide" data-slide-title="Roadmap" id="slide-7">
+
+<div class="slide-header" data-animate="1">
+<div class="deck-brand">
+<span class="deck-brand-pill"></span>
+<span>SECTION 07 • ROADMAP</span>
+</div>
+<div class="header-actions">
+<button class="pdf-export-btn" onclick="exportDeckToPDF()" title="Download PDF Presentation (P)">
+<i data-lucide="arrow-down-to-line" style="width:13px;height:13px;"></i>
+<span>PDF</span>
+</button>
+<div class="theme-switcher" onclick="toggleTheme()" role="button" title="Toggle Theme (or press 'T')">
+<button class="theme-btn active" data-mode="dark" type="button"><i data-lucide="moon" style="width:13px;height:13px;"></i></button>
+<button class="theme-btn" data-mode="light" type="button"><i data-lucide="sun" style="width:13px;height:13px;"></i></button>
+<span class="theme-hint">T</span>
+</div>
+<span class="deck-classification">Contribute</span>
+</div>
+</div>
+<div class="slide-body">
+<div class="tagline-eyebrow" data-animate="2"><span class="badge">ROADMAP</span><span>Links + next</span></div>
+<h2 class="display-title" data-animate="3">Built for <span class="text-gradient">community reports</span>.</h2>
+<div class="grid-3col" data-animate="4">
+<div class="glass-card"><span class="corner-tick tl"></span><span class="corner-tick br"></span><h3 style="font-size:1.05rem;margin-bottom:8px;">Confirm platforms</h3><p style="color:var(--text-secondary);font-size:.9rem;">Windows primary. Need macOS/Linux terminal + OS reports.</p></div>
+<div class="glass-card"><span class="corner-tick tl"></span><span class="corner-tick br"></span><h3 style="font-size:1.05rem;margin-bottom:8px;">Perf notes</h3><p style="color:var(--text-secondary);font-size:.9rem;">Huge-tree timings, mouse behavior per terminal.</p></div>
+<div class="glass-card"><span class="corner-tick tl"></span><span class="corner-tick br"></span><h3 style="font-size:1.05rem;margin-bottom:8px;">Links</h3><p style="color:var(--text-secondary);font-size:.9rem;">Repo • Issues • v0.1.0 • opencode.ai (see footer).</p></div>
+</div>
+</div>
+
+<div class="slide-footer" data-animate="5">
+<div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-tertiary);">github.com/amy220478/opencode-cairn • /issues • /releases/tag/v0.1.0</div>
+<div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-tertiary);">MIT • PRs welcome</div>
+</div>
+</section>
+</div>
+</div>
+<!-- =========================================================================
+     FIXED BOTTOM CONTROLS & TIMELINE (Clearance from Slide Content)
+     ========================================================================= -->
+<!-- Developer Blueprint Spec Drawer Button -->
+<button class="agent-guide-toggle" onclick="toggleModal(true)">
+<i data-lucide="terminal" style="width:14px;height:14px;"></i>
+<span>&gt;_ AI Agent Blueprint Spec</span>
+</button>
+<!-- Navigation HUD Controls -->
+<nav aria-label="Deck controls" class="hud-controller">
+<button class="hud-btn" id="prev-btn" onclick="navigateDeck(-1)" title="Previous Slide (Left Arrow)">
+<i data-lucide="chevron-left" style="width:16px;height:16px;"></i>
+</button>
+<span class="hud-indicator" id="slide-indicator">1 / 8</span>
+<button class="hud-btn" id="next-btn" onclick="navigateDeck(1)" title="Next Slide (Right Arrow or Space)">
+<i data-lucide="chevron-right" style="width:16px;height:16px;"></i>
+</button>
+<div class="hud-divider"></div>
+<button class="hud-btn-pdf" onclick="exportDeckToPDF()" title="Download PDF Deck (P)">
+<i data-lucide="file-down" style="width:14px;height:14px;"></i>
+<span>PDF</span>
+</button>
+<div class="hud-divider"></div>
+<button class="hud-btn" id="hud-theme-toggle" onclick="toggleTheme()" title="Toggle Theme (or press 'T')">
+<i data-lucide="sun" id="hud-theme-icon" style="width:15px;height:15px;"></i>
+</button>
+</nav>
+<!-- Segmented progress bar tracks -->
+<div class="presentation-progress" id="progress-container"></div>
+<!-- Agent Boilerplate Reference Modal -->
+<div class="agent-modal" id="agent-modal" onclick="if(event.target === this) toggleModal(false)">
+<div class="modal-panel">
+<button class="modal-close" onclick="toggleModal(false)">
+<i data-lucide="x" style="width:18px;height:18px;"></i>
+</button>
+<div class="tagline-eyebrow"><span class="badge">PRESENTER GUIDE</span> opencode-cairn talk track</div>
+<h3 style="font-family: var(--font-heading); font-size: 1.35rem; margin-bottom: 12px;">How to present this plugin in 3 minutes</h3>
+<p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; margin-bottom: 18px;">
+      Cover (cairn metaphor) → Problem → Visuals (both PNGs) → Features → How it works (2 files) → Commands → Install → Roadmap. All styles, buttons, animations, theme, HUD, progress, modal, and PDF export come from the boilerplate engine.
+    </p>
+<div style="display:flex; flex-direction:column; gap:14px; font-family:var(--font-mono); font-size:0.8rem;">
+<div style="background:var(--bg-surface-elev); border:1px solid var(--border-subtle); padding:14px; border-radius:8px;">
+<strong style="color:var(--accent);">1. Adding New Slides:</strong>
+<p style="color:var(--text-secondary); margin-top:4px;">Add another <code>&lt;section class="slide" id="slide-N" data-slide-title="..."&gt;</code>. JavaScript automatically calculates the total slide count, updates HUD indicators, and builds segmented progress bars.</p>
+</div>
+<div style="background:var(--bg-surface-elev); border:1px solid var(--border-subtle); padding:14px; border-radius:8px;">
+<strong style="color:var(--accent);">2. Staggered Entrance Animations:</strong>
+<p style="color:var(--text-secondary); margin-top:4px;">Add <code>data-animate="1"</code> through <code>data-animate="5"</code> to elements. The orchestrator reveals each sequentially on slide entry.</p>
+</div>
+<div style="background:var(--bg-surface-elev); border:1px solid var(--border-subtle); padding:14px; border-radius:8px;">
+<strong style="color:var(--accent);">3. Theme System &amp; Shortcuts:</strong>
+<p style="color:var(--text-secondary); margin-top:4px;">Toggle between Dark (Obsidian Gold) and Light (Architectural Studio Off-White) by clicking any theme button or pressing <code>T</code>.</p>
+</div>
+<div style="background:var(--bg-surface-elev); border:1px solid var(--border-subtle); padding:14px; border-radius:8px;">
+<strong style="color:var(--accent);">4. PDF Presentation Export:</strong>
+<p style="color:var(--text-secondary); margin-top:4px;">Click the <code>PDF</code> button in the top bar or floating HUD, or press <code>P</code>. The engine renders all slides concurrently across clean landscape printable pages.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- =========================================================================
+     PRESENTATION ENGINE & THEME CONTROLLER
+     ========================================================================= -->
 <script>
-let i=0;const s=[...document.querySelectorAll('.slide')],c=document.getElementById('count'),p=document.getElementById('prog');
-s.forEach((_,k)=>{const d=document.createElement('div');if(!k)d.classList.add('on');d.onclick=()=>go(k);p.appendChild(d)});
-function go(k){i=Math.max(0,Math.min(s.length-1,k));s.forEach((e,j)=>e.classList.toggle('active',j===i));c.textContent=(i+1)+' / '+s.length;[...p.children].forEach((e,j)=>e.classList.toggle('on',j<=i))}
-document.getElementById('prev').onclick=()=>go(i-1);document.getElementById('next').onclick=()=>go(i+1);
-addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();go(i+1)}else if(e.key==='ArrowLeft'){go(i-1)}else if(e.key==='Home'){go(0)}else if(e.key==='End'){go(s.length-1)}else if(e.key==='t'||e.key==='T'){toggleTheme()}else if(e.key==='p'||e.key==='P'){print()}});
-function toggleTheme(){const h=document.documentElement;h.dataset.theme=h.dataset.theme==='dark'?'light':'dark'}
-go(0);
+  // -------------------------------------------------------------
+  // THEME ENGINE
+  // -------------------------------------------------------------
+  let currentTheme = 'dark';
+
+  function initTheme() {
+    try {
+      const stored = localStorage.getItem('deck_theme');
+      if (stored === 'light' || stored === 'dark') {
+        currentTheme = stored;
+      } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+        currentTheme = 'light';
+      }
+    } catch(e) {}
+    applyTheme(currentTheme);
+  }
+
+  function applyTheme(theme) {
+    currentTheme = theme;
+    document.documentElement.setAttribute('data-theme', theme);
+    
+    try {
+      localStorage.setItem('deck_theme', theme);
+    } catch(e) {}
+
+    // Update segmented theme switchers
+    document.querySelectorAll('.theme-switcher').forEach(switcher => {
+      const darkBtn = switcher.querySelector('[data-mode="dark"]');
+      const lightBtn = switcher.querySelector('[data-mode="light"]');
+      if (darkBtn) darkBtn.classList.toggle('active', theme === 'dark');
+      if (lightBtn) lightBtn.classList.toggle('active', theme === 'light');
+    });
+
+    // Update HUD toggle icon
+    const hudIcon = document.getElementById('hud-theme-icon');
+    if (hudIcon) {
+      hudIcon.setAttribute('data-lucide', theme === 'dark' ? 'sun' : 'moon');
+    }
+
+    if (window.lucide) {
+      lucide.createIcons();
+    }
+  }
+
+  function toggleTheme() {
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    if (document.startViewTransition) {
+      document.startViewTransition(() => applyTheme(newTheme));
+    } else {
+      applyTheme(newTheme);
+    }
+  }
+
+  // -------------------------------------------------------------
+  // SLIDE ORCHESTRATION & NAVIGATION
+  // -------------------------------------------------------------
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const totalSlides = slides.length;
+  const progressContainer = document.getElementById('progress-container');
+  const slideIndicator = document.getElementById('slide-indicator');
+  const spotlight = document.getElementById('global-spotlight');
+  let currentSlide = 0;
+
+  // Build segmented progress bars
+  slides.forEach((slide, idx) => {
+    const track = document.createElement('div');
+    track.className = 'progress-track' + (idx === 0 ? ' active' : '');
+    track.title = slide.getAttribute('data-slide-title') || `Slide ${idx + 1}`;
+    
+    const fill = document.createElement('div');
+    fill.className = 'progress-fill';
+    track.appendChild(fill);
+
+    track.addEventListener('click', () => goToSlide(idx));
+    progressContainer.appendChild(track);
+  });
+
+  const progressTracks = progressContainer.querySelectorAll('.progress-track');
+
+  function updateDeckState() {
+    slides.forEach((s, idx) => {
+      s.classList.toggle('active', idx === currentSlide);
+    });
+
+    progressTracks.forEach((t, idx) => {
+      t.classList.toggle('active', idx <= currentSlide);
+      const fill = t.querySelector('.progress-fill');
+      fill.style.width = idx <= currentSlide ? '100%' : '0%';
+    });
+
+    slideIndicator.textContent = `${currentSlide + 1} / ${totalSlides}`;
+  }
+
+  function navigateDeck(direction) {
+    const target = currentSlide + direction;
+    if (target >= 0 && target < totalSlides) {
+      currentSlide = target;
+      if (document.startViewTransition) {
+        document.startViewTransition(() => updateDeckState());
+      } else {
+        updateDeckState();
+      }
+    }
+  }
+
+  function goToSlide(index) {
+    if (index >= 0 && index < totalSlides && index !== currentSlide) {
+      currentSlide = index;
+      if (document.startViewTransition) {
+        document.startViewTransition(() => updateDeckState());
+      } else {
+        updateDeckState();
+      }
+    }
+  }
+
+  // PDF Export Execution Handler
+  function exportDeckToPDF() {
+    toggleModal(false);
+    setTimeout(() => {
+      window.print();
+    }, 150);
+  }
+
+  // Keyboard controls
+  window.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+      e.preventDefault();
+      navigateDeck(1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      e.preventDefault();
+      navigateDeck(-1);
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      goToSlide(0);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      goToSlide(totalSlides - 1);
+    } else if (e.key === 't' || e.key === 'T') {
+      e.preventDefault();
+      toggleTheme();
+    } else if (e.key === 'p' || e.key === 'P') {
+      e.preventDefault();
+      exportDeckToPDF();
+    } else if (e.key === 'Escape') {
+      toggleModal(false);
+    }
+  });
+
+  // Spotlight follows cursor smoothly & updates global coordinates
+  window.addEventListener('mousemove', (e) => {
+    const x = `${e.clientX}px`;
+    const y = `${e.clientY}px`;
+    document.documentElement.style.setProperty('--cursor-x', x);
+    document.documentElement.style.setProperty('--cursor-y', y);
+    if (spotlight) {
+      spotlight.style.left = x;
+      spotlight.style.top = y;
+    }
+  });
+
+  // Developer blueprint modal toggle
+  function toggleModal(open) {
+    const modal = document.getElementById('agent-modal');
+    modal.classList.toggle('open', open);
+  }
+
+  // Initialize
+  initTheme();
+  updateDeckState();
+  if (window.lucide) {
+    lucide.createIcons();
+  }
 </script>
-</body>
-</html>
+</body></html>
