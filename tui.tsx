@@ -254,7 +254,7 @@ export default Plugin.define({
         } else {
           // Linux: no recursive watch — watch each dir up to depth cap.
           const depth = st().depth ?? DEFAULT_DEPTH
-          for (const dir of collectDirs(root, showAll, Math.min(10, depth))) {
+          for (const dir of collectDirs(root, showAll, Math.min(15, depth))) {
             try {
               const w = watch(dir, { persistent: false }, onEvent)
               w.on("error", () => {})
@@ -597,7 +597,7 @@ export default Plugin.define({
                 let depth = cur.depth ?? DEFAULT_DEPTH
                 for (const token of tokens) {
                   if (/^\d+$/.test(token)) {
-                    depth = Math.min(10, Math.max(1, parseInt(token, 10)))
+                    depth = Math.min(15, Math.max(1, parseInt(token, 10)))
                   } else {
                     const candidate = resolve(baseDir, token)
                     try {

@@ -112,7 +112,7 @@ No config file needed. State lives in durable `cairn.params` storage (survives r
 |---|---|---|
 | `visible` | `true` | Panel shows without any command |
 | `root` | `""` (= current project) | Pin with `/cairn <path>`; empty always follows you |
-| `depth` | `5` | Max levels rendered (1–10 via `/cairn <n>`) |
+| `depth` | `5` | Max levels rendered (1–15 via `/cairn <n>`, e.g. `/cairn 10`, `/cairn src 2`) |
 | `watch` | `true` | Live refresh via `fs.watch` (recursive on Win/mac, per-dir on Linux); toggle with `/cairn watch` |
 | `showAll` | `false` | Show everything incl. `node_modules/.git/dist`; toggle with `/cairn showall` |
 | `paneCollapsed` | `false` | Whole-pane collapse |
