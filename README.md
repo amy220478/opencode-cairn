@@ -20,9 +20,11 @@
 
 ## Presentation
 
-Interactive 8-slide deck for demos: [presentation.html](./presentation.html) — live web view: https://amy220478.github.io/opencode-cairn/presentation.html
+Interactive 8-slide deck for demos — live web view: [**▶ Click here to view**](https://amy220478.github.io/opencode-cairn/presentation.html)
 
-GitHub shows HTML as source — use the live link above for web view. Locally, right-click → Open With → browser (or `start presentation.html`), not the editor preview. Then use `← → / space`, `T` theme, `P` print-to-PDF. Images load from `./assets/` — keep the folder together.
+[![▶ View Live Presentation](https://img.shields.io/badge/▶_View_Live_Presentation-F59E0B?style=for-the-badge)](https://amy220478.github.io/opencode-cairn/presentation.html)
+
+Local copy ships in-repo (`presentation.html`) — open it in a browser (double-click or `start presentation.html`), then `← → / space`, `T` theme, `P` print-to-PDF. Keep `./assets/` alongside.
 
 ## Core Features
 
