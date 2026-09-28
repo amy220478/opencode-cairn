@@ -20,9 +20,9 @@
 
 ## Presentation
 
-Interactive 8-slide deck for demos: [presentation.html](./presentation.html)
+Interactive 8-slide deck for demos: [presentation.html](./presentation.html) — live web view: https://amy220478.github.io/opencode-cairn/presentation.html
 
-Open it locally (double-click or `start presentation.html`), then use `← → / space`, `T` theme, `P` print-to-PDF. Images load from `./assets/` — keep the folder together.
+GitHub shows HTML as source — use the live link above for web view. Locally, right-click → Open With → browser (or `start presentation.html`), not the editor preview. Then use `← → / space`, `T` theme, `P` print-to-PDF. Images load from `./assets/` — keep the folder together.
 
 ## Core Features
 
